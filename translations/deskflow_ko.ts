@@ -1180,6 +1180,74 @@ Enabling this setting will disable the server config GUI.</source>
         <translation>언어</translation>
     </message>
     <message>
+        <source>macOS login-session diagnostics (experimental)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checks the login-window session and input permissions. This does not unlock FileVault or enable keyboard/mouse control before login.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Register probe</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unregister probe</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Login Items settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Register diagnostic probe?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This experimental helper runs in the macOS login-window session and reports session/input permission status. It cannot unlock FileVault or control the login screen. macOS may require approval in Login Items. Register it?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Probe registration failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Probe removal failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not registered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Registered and enabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Waiting for macOS approval</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Probe not present in application bundle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Requires macOS 13 or newer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Probe status: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>TLS Certificate Regenerated</source>
         <translation>TLS 인증서 재생성됨</translation>
     </message>

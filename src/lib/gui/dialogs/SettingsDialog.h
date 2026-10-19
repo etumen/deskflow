@@ -12,6 +12,7 @@
 #include "gui/config/ServerConfig.h"
 
 class SettingsDialogButtonBox;
+class QLabel;
 
 namespace Ui {
 class SettingsDialog;
@@ -44,6 +45,10 @@ private:
   void updateTlsControlsEnabled();
   void resetAllSettings();
   void updateText();
+#ifdef Q_OS_MACOS
+  void initMacLoginProbe();
+  void refreshMacLoginProbeStatus();
+#endif
 
   /// @brief Load all settings.
   void loadFromConfig();
@@ -87,4 +92,9 @@ private:
   std::unique_ptr<Ui::SettingsDialog> ui;
   const ServerConfig &m_serverConfig;
   SettingsDialogButtonBox *m_buttonBox = nullptr;
+#ifdef Q_OS_MACOS
+  QLabel *m_loginProbeStatusLabel = nullptr;
+  QPushButton *m_loginProbeEnableButton = nullptr;
+  QPushButton *m_loginProbeDisableButton = nullptr;
+#endif
 };

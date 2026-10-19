@@ -17,6 +17,15 @@
 #include "gui/core/NetworkMonitor.h"
 #include "gui/widgets/SettingsDialogButtonBox.h"
 
+#ifdef Q_OS_MACOS
+#include "gui/OSXHelpers.h"
+#include <QGroupBox>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QPushButton>
+#include <QVBoxLayout>
+#endif
+
 #include <QComboBox>
 #include <QDir>
 #include <QFileDialog>
@@ -32,6 +41,9 @@ SettingsDialog::SettingsDialog(QWidget *parent, const ServerConfig &serverConfig
 {
 
   ui->setupUi(this);
+#ifdef Q_OS_MACOS
+  initMacLoginProbe();
+#endif
   layout()->addWidget(m_buttonBox);
   ui->tabWidget->setCurrentIndex(0);
 
@@ -84,6 +96,98 @@ SettingsDialog::SettingsDialog(QWidget *parent, const ServerConfig &serverConfig
   setButtonBoxEnabledButtons();
   initConnections();
 }
+
+#ifdef Q_OS_MACOS
+void SettingsDialog::initMacLoginProbe()
+{
+  // Diagnostic only: do not register a login-window agent without an explicit user action.
+  auto *group = new QGroupBox(tr("macOS login-session diagnostics (experimental)"), ui->tabAdvanced);
+  auto *groupLayout = new QVBoxLayout(group);
+  auto *info = new QLabel(
+      tr("Checks the login-window session and input permissions. This does not unlock FileVault "
+         "or enable keyboard/mouse control before login."), group
+  );
+  info->setWordWrap(true);
+  groupLayout->addWidget(info);
+
+  m_loginProbeStatusLabel = new QLabel(group);
+  groupLayout->addWidget(m_loginProbeStatusLabel);
+
+  auto *buttons = new QHBoxLayout;
+  m_loginProbeEnableButton = new QPushButton(tr("Register probe"), group);
+  m_loginProbeDisableButton = new QPushButton(tr("Unregister probe"), group);
+  auto *settingsButton = new QPushButton(tr("Login Items settings"), group);
+  auto *refreshButton = new QPushButton(tr("Refresh"), group);
+
+  buttons->addWidget(m_loginProbeEnableButton);
+  buttons->addWidget(m_loginProbeDisableButton);
+  buttons->addWidget(settingsButton);
+  buttons->addWidget(refreshButton);
+  groupLayout->addLayout(buttons);
+
+  auto *advancedLayout = qobject_cast<QVBoxLayout *>(ui->tabAdvanced->layout());
+  advancedLayout->insertWidget(1, group);
+
+  connect(m_loginProbeEnableButton, &QPushButton::clicked, this, [this] {
+    if (QMessageBox::question(
+            this, tr("Register diagnostic probe?"),
+            tr("This experimental helper runs in the macOS login-window session and reports "
+               "session/input permission status. It cannot unlock FileVault or control the login "
+               "screen. macOS may require approval in Login Items. Register it?"),
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No
+        ) != QMessageBox::Yes) {
+      return;
+    }
+
+    QString error;
+    if (!setOSXLoginHelperEnabled(true, &error)) {
+      QMessageBox::warning(this, tr("Probe registration failed"), error.isEmpty() ? tr("Unknown error") : error);
+    }
+    refreshMacLoginProbeStatus();
+  });
+
+  connect(m_loginProbeDisableButton, &QPushButton::clicked, this, [this] {
+    QString error;
+    if (!setOSXLoginHelperEnabled(false, &error)) {
+      QMessageBox::warning(this, tr("Probe removal failed"), error.isEmpty() ? tr("Unknown error") : error);
+    }
+    refreshMacLoginProbeStatus();
+  });
+  connect(settingsButton, &QPushButton::clicked, this, [] { openOSXLoginItemsSettings(); });
+  connect(refreshButton, &QPushButton::clicked, this, &SettingsDialog::refreshMacLoginProbeStatus);
+
+  refreshMacLoginProbeStatus();
+}
+
+void SettingsDialog::refreshMacLoginProbeStatus()
+{
+  const auto status = osxLoginHelperStatus();
+  QString statusText;
+  switch (status) {
+  case OSXLoginHelperStatus::NotRegistered:
+    statusText = tr("Not registered");
+    break;
+  case OSXLoginHelperStatus::Enabled:
+    statusText = tr("Registered and enabled");
+    break;
+  case OSXLoginHelperStatus::RequiresApproval:
+    statusText = tr("Waiting for macOS approval");
+    break;
+  case OSXLoginHelperStatus::NotFound:
+    statusText = tr("Probe not present in application bundle");
+    break;
+  case OSXLoginHelperStatus::Unsupported:
+    statusText = tr("Requires macOS 13 or newer");
+    break;
+  }
+
+  m_loginProbeStatusLabel->setText(tr("Probe status: %1").arg(statusText));
+  m_loginProbeEnableButton->setEnabled(status == OSXLoginHelperStatus::NotRegistered);
+  m_loginProbeDisableButton->setEnabled(
+      status == OSXLoginHelperStatus::Enabled || status == OSXLoginHelperStatus::RequiresApproval
+  );
+}
+#endif
 
 void SettingsDialog::changeEvent(QEvent *e)
 {
