@@ -50,3 +50,7 @@ endif()
 add_subdirectory(deskflow-core)
 add_subdirectory(deskflow-daemon) #Only used on windows
 add_subdirectory(deskflow-gui)
+
+if(APPLE AND ETUMEN_BUILD_LOGIN_PROBE)
+  add_subdirectory(deskflow-session-probe)
+endif()

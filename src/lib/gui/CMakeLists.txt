@@ -124,3 +124,8 @@ target_link_libraries(${target}
     net
     Qt6::Widgets
 )
+
+if(APPLE)
+  find_library(SERVICE_MANAGEMENT_FRAMEWORK ServiceManagement REQUIRED)
+  target_link_libraries(${target} PRIVATE ${SERVICE_MANAGEMENT_FRAMEWORK})
+endif()

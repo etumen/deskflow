@@ -10,8 +10,20 @@
 
 #include <functional>
 
+enum class OSXLoginHelperStatus
+{
+  Unsupported,
+  NotRegistered,
+  Enabled,
+  RequiresApproval,
+  NotFound
+};
+
 void requestOSXNotificationPermission();
 bool isOSXDevelopmentBuild();
+OSXLoginHelperStatus osxLoginHelperStatus();
+bool setOSXLoginHelperEnabled(bool enabled, QString *errorMessage = nullptr);
+void openOSXLoginItemsSettings();
 bool showOSXNotification(const QString &title, const QString &body);
 bool isOSXInterfaceStyleDark();
 void forceAppActive();

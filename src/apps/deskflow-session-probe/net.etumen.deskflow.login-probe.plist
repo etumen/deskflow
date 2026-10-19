@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>net.etumen.deskflow.login-probe</string>
+
+  <key>BundleProgram</key>
+  <string>Contents/MacOS/deskflow-session-probe</string>
+
+  <key>LimitLoadToSessionType</key>
+  <string>LoginWindow</string>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/var/tmp/net.etumen.deskflow.login-probe.jsonl</string>
+
+  <key>StandardErrorPath</key>
+  <string>/var/tmp/net.etumen.deskflow.login-probe.err.log</string>
+</dict>
+</plist>

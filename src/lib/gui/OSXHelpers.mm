@@ -9,6 +9,7 @@
 #import <Cocoa/Cocoa.h>
 #import <CoreData/CoreData.h>
 #import <Foundation/Foundation.h>
+#import <ServiceManagement/ServiceManagement.h>
 #import <UserNotifications/UNNotification.h>
 #import <UserNotifications/UNNotificationContent.h>
 #import <UserNotifications/UNNotificationTrigger.h>
@@ -51,6 +52,61 @@ bool isOSXDevelopmentBuild()
 {
   std::string bundleURL = [[[NSBundle mainBundle] bundleURL].absoluteString UTF8String];
   return (bundleURL.find("Applications/Deskflow.app") == std::string::npos);
+}
+
+OSXLoginHelperStatus osxLoginHelperStatus()
+{
+  if (@available(macOS 13.0, *)) {
+    SMAppService *service = [SMAppService agentServiceWithPlistName:@"net.etumen.deskflow.login-probe.plist"];
+    switch (service.status) {
+    case SMAppServiceStatusNotRegistered:
+      return OSXLoginHelperStatus::NotRegistered;
+    case SMAppServiceStatusEnabled:
+      return OSXLoginHelperStatus::Enabled;
+    case SMAppServiceStatusRequiresApproval:
+      return OSXLoginHelperStatus::RequiresApproval;
+    case SMAppServiceStatusNotFound:
+      return OSXLoginHelperStatus::NotFound;
+    }
+  }
+
+  return OSXLoginHelperStatus::Unsupported;
+}
+
+bool setOSXLoginHelperEnabled(bool enabled, QString *errorMessage)
+{
+  if (errorMessage != nullptr) {
+    errorMessage->clear();
+  }
+
+  if (@available(macOS 13.0, *)) {
+    SMAppService *service = [SMAppService agentServiceWithPlistName:@"net.etumen.deskflow.login-probe.plist"];
+
+    if ((enabled && service.status == SMAppServiceStatusEnabled) ||
+        (!enabled && service.status == SMAppServiceStatusNotRegistered)) {
+      return true;
+    }
+
+    NSError *error = nil;
+    const BOOL ok = enabled ? [service registerAndReturnError:&error] : [service unregisterAndReturnError:&error];
+    if (!ok && errorMessage != nullptr && error != nil) {
+      *errorMessage = QString::fromUtf8([[error localizedDescription] UTF8String]);
+    }
+
+    return ok == YES;
+  }
+
+  if (errorMessage != nullptr) {
+    *errorMessage = QStringLiteral("macOS 13 or later is required");
+  }
+  return false;
+}
+
+void openOSXLoginItemsSettings()
+{
+  if (@available(macOS 13.0, *)) {
+    [SMAppService openSystemSettingsLoginItems];
+  }
 }
 
 bool showOSXNotification(const QString &title, const QString &body)
