@@ -21,6 +21,7 @@
 #include <QCommandLineParser>
 #include <QLocalSocket>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QSharedMemory>
 
 #if defined(Q_OS_MACOS)
@@ -71,12 +72,19 @@ int main(int argc, char *argv[])
   auto helpOption = QCommandLineOption({"h", "help"}, "Display Help on the command line");
   auto versionOption = QCommandLineOption({"v", "version"}, "Display version information");
   auto resetOption = QCommandLineOption("reset", "Reset all settings");
+#if defined(Q_OS_MACOS)
+  // Read-only: this option never asks for or changes a privacy permission.
+  auto macAccessCheckOption = QCommandLineOption("mac-access-check", "Print macOS input authorization");
+#endif
 
   QCommandLineParser parser;
   parser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);
   parser.addOption(helpOption);
   parser.addOption(versionOption);
   parser.addOption(resetOption);
+#if defined(Q_OS_MACOS)
+  parser.addOption(macAccessCheckOption);
+#endif
   parser.parse(QCoreApplication::arguments());
 
   if (!parser.errorText().isEmpty()) {
@@ -94,6 +102,16 @@ int main(int argc, char *argv[])
     QTextStream(stdout) << kHeader << kCopyright << Qt::endl;
     return s_exitSuccess;
   }
+
+#if defined(Q_OS_MACOS)
+  if (parser.isSet(macAccessCheckOption)) {
+    QTextStream(stdout) << "accessibilityTrusted=" << (AXIsProcessTrusted() ? "true" : "false")
+                        << " listenEventAllowed=" << (CGPreflightListenEventAccess() ? "true" : "false")
+                        << " postEventAllowed=" << (CGPreflightPostEventAccess() ? "true" : "false")
+                        << Qt::endl;
+    return s_exitSuccess;
+  }
+#endif
 
   const auto shmId = QStringLiteral("%1-gui").arg(kAppId);
   // Create a shared memory segment with a unique key
@@ -141,7 +159,25 @@ int main(int argc, char *argv[])
   }
 
   if (!checkMacAssistiveDevices()) {
-    return 1;
+    // macOS authorization prompts asynchronously; do not quit before the
+    // user gets a chance to grant permission. Never start core untrusted.
+    QMessageBox permissionDialog(
+        QMessageBox::Warning, QObject::tr("macOS input permission required"),
+        QObject::tr("Deskflow needs permission under Privacy & Security > "
+                    "Device Control and Data Access (formerly Accessibility). "
+                    "Enable the installed Deskflow app and its deskflow-core executable. "
+                    "Also allow them in Input Monitoring if required. "
+                    "Click Retry after granting permission, or Cancel to leave Deskflow closed."),
+        QMessageBox::NoButton
+    );
+    auto *retry = permissionDialog.addButton(QObject::tr("Retry"), QMessageBox::AcceptRole);
+    permissionDialog.addButton(QMessageBox::Cancel);
+    while (!AXIsProcessTrusted()) {
+      permissionDialog.exec();
+      if (permissionDialog.clickedButton() != retry) {
+        return 1;
+      }
+    }
   }
 #endif
 
