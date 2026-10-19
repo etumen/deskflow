@@ -736,9 +736,12 @@ void Client::handleSuspend()
   if (!m_suspended) {
     LOG_INFO("suspend");
     m_suspended = true;
-    bool wasConnected = isConnected();
+
+    // An active client should always resume its connection loop after sleep, even if it
+    // happened to be between retry attempts when the system suspended. Limiting this to
+    // isConnected() leaves a disconnected/retrying client stranded after wake.
     disconnect(nullptr);
-    m_connectOnResume = wasConnected;
+    m_connectOnResume = true;
   }
 }
 
